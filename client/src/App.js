@@ -1,10 +1,9 @@
 import React from 'react';
 import { ApolloProvider, ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
+import { setContext } from '@apollo/client/link/context';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-
 import Header from './components/Header';
 import Footer from './components/Footer';
-
 import Home from './pages/Home';
 import Login from './pages/Login';
 import NoMatch from './pages/NoMatch';
@@ -22,8 +21,20 @@ const httpLink = createHttpLink({
   uri: '/graphql',
 })
 
+// In this case, we don't need the first parameter offered by setContext(), which stores the current request object in case this function is running after we've initiated a request.
+//we're not using the first parameter, but we still need to access the second one, we can use an underscore _ to serve as a placeholder for the first parameter.
+const authLink = setContext((_, { headers }) => {
+  const token = localStorage.getItem('id_token');
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? `Bearer ${token}` : '',
+    },
+  };
+});
+
 const client = new ApolloClient({
-  link: httpLink,
+  link:  authLink.concat(httpLink),
   cache: new InMemoryCache(),
 });
 
